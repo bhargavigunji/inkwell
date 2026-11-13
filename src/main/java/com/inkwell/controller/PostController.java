@@ -1,5 +1,6 @@
 package com.inkwell.controller;
 
+import com.inkwell.dto.PostResponseDTO;
 import com.inkwell.entity.Post;
 import com.inkwell.service.AiService;
 import com.inkwell.service.PostService;
@@ -20,22 +21,22 @@ public class PostController {
     AiService aiService;
 
     @PostMapping()
-    public Post createPost(@RequestBody Post post){
+    public PostResponseDTO createPost(@RequestBody Post post){
         return postService.createPost(post);
     }
 
     @GetMapping()
-    public List<Post> getAllPosts(){
+    public List<PostResponseDTO> getAllPosts(){
         return postService.getAllPosts();
     }
 
     @GetMapping("/{id}")
-    public Post getPostById(@PathVariable Long id){
+    public PostResponseDTO getPostById(@PathVariable Long id){
         return postService.getPostById(id);
     }
 
     @PutMapping("/{id}")
-    public Post updatePost(@PathVariable Long id, @RequestBody Post post){
+    public PostResponseDTO updatePost(@PathVariable Long id, @RequestBody Post post){
         return postService.updatePost(id, post);
     }
 
@@ -45,19 +46,19 @@ public class PostController {
     }
 
     @GetMapping("/user/{userId}")
-    public List<Post> getPostByUser(@PathVariable Long userId){
+    public List<PostResponseDTO> getPostByUser(@PathVariable Long userId){
         return postService.getPostsByUser(userId);
     }
 
     @GetMapping("/category/{categoryId}")
-    public List<Post> getPostByCategory(@PathVariable Long categoryId){
+    public List<PostResponseDTO> getPostByCategory(@PathVariable Long categoryId){
         return postService.getPostsByCategory(categoryId);
     }
 
 
     @GetMapping("/{id}/summarize")
     public String summarizePost(@PathVariable Long id){
-       Post existingPost=  postService.getPostById(id);
+       PostResponseDTO existingPost=  postService.getPostById(id);
 
        return aiService.summarizePost(existingPost.getContent());
 

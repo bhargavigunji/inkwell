@@ -1,5 +1,6 @@
 package com.inkwell.controller;
 
+import com.inkwell.dto.CommentResponseDTO;
 import com.inkwell.entity.Comment;
 import com.inkwell.service.CommentService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,17 +16,17 @@ public class CommentController {
     CommentService commentService;
 
     @PostMapping()
-    public Comment createComment(@RequestBody Comment comment){
+    public CommentResponseDTO createComment(@RequestBody Comment comment){
         return commentService.createComment(comment);
     }
 
     @GetMapping()
-    public List<Comment> getAllComments(){
+    public List<CommentResponseDTO> getAllComments(){
         return commentService.getAllComments();
     }
 
     @GetMapping("/posts/{postId}")
-    public List<Comment> getCommentByPost(@PathVariable Long postId){
+    public List<CommentResponseDTO> getCommentByPost(@PathVariable Long postId){
         return commentService.getCommentByPost(postId);
     }
 

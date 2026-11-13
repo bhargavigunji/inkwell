@@ -1,8 +1,10 @@
 package com.inkwell.controller;
 
+import com.inkwell.dto.UserResponseDTO;
 import com.inkwell.entity.User;
 import com.inkwell.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,26 +16,26 @@ public class UserController {
     @Autowired
     UserService userService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping()
-    public List<User> getAllUsers(){
+    public List<UserResponseDTO> getAllUsers(){
         return userService.getAllUsers();
     }
 
     @GetMapping("/{id}")
-    public User getUserById(@PathVariable Long id){
+    public UserResponseDTO getUserById(@PathVariable Long id){
         return userService.getUserById(id);
     }
 
-    @PostMapping()
-    public User registerUser(@RequestBody User user){
-        return userService.registerUser(user);
-    }
 
+
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public User updateUser(@PathVariable Long id, @RequestBody User user){
+    public UserResponseDTO updateUser(@PathVariable Long id, @RequestBody User user){
         return userService.updateUser(id, user);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public void deleteUser(@PathVariable Long id){
         userService.deleteUser(id);
