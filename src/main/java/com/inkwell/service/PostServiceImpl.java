@@ -1,14 +1,15 @@
 package com.inkwell.service;
 
-import com.inkwell.entity.Category;
-import com.inkwell.entity.Post;
-import com.inkwell.entity.Tag;
-import com.inkwell.entity.User;
+import com.inkwell.dto.PostResponseDTO;
+import com.inkwell.entity.*;
+import com.inkwell.exception.ForbiddenException;
+import com.inkwell.exception.ResourceNotFoundException;
 import com.inkwell.repo.CategoryRepo;
 import com.inkwell.repo.PostRepo;
 import com.inkwell.repo.TagRepo;
 import com.inkwell.repo.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -30,18 +31,22 @@ public class PostServiceImpl implements PostService {
     TagRepo tagRepo;
 
     @Override
-    public Post createPost(Post post) {
+    public PostResponseDTO createPost(Post post) {
 
-        User author =userRepo.findById(post.getAuthor().getId()).orElseThrow(()-> new RuntimeException("User not found"));
+        User author = getCurrentUser();
+
+        if(post.getAuthor()!=null && !author.getId().equals(post.getAuthor().getId())){
+            throw new ForbiddenException("You cannot create a post on behalf of another user");
+        }
 
         post.setAuthor(author);
 
-        Category category =categoryRepo.findById(post.getCategory().getId()).orElseThrow(()-> new RuntimeException("Category not found"));
+        Category category =categoryRepo.findById(post.getCategory().getId()).orElseThrow(()-> new ResourceNotFoundException("Category not found"));
         post.setCategory(category);
 
         List<Tag> tags = post.getTags().stream()
                 .map(tag -> tagRepo.findById(tag.getId())
-                        .orElseThrow(()-> new RuntimeException("Tag not found"))).collect(Collectors.toList());
+                        .orElseThrow(()-> new ResourceNotFoundException("Tag not found"))).collect(Collectors.toList());
 
         post.setTags(tags);
 
@@ -51,60 +56,102 @@ public class PostServiceImpl implements PostService {
 
 
 
-        return postRepo.save(post);
+       Post saved = postRepo.save(post);
+        return PostResponseDTO.fromPost(saved);
     }
 
 
     @Override
-    public List<Post> getAllPosts() {
-        return postRepo.findAll();
+    public List<PostResponseDTO> getAllPosts() {
+        return postRepo.findAll().stream()
+                .map(PostResponseDTO::fromPost)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public Post getPostById(Long id) {
-        return postRepo.findById(id).orElseThrow(()-> new RuntimeException("Post not found"));
+    public PostResponseDTO getPostById(Long id) {
+        Post post= postRepo.findById(id).orElseThrow(()-> new ResourceNotFoundException("Post not found"));
+        return PostResponseDTO.fromPost(post);
     }
 
     @Override
-    public Post updatePost(Long id, Post post) {
-        Post existingPost =postRepo.findById(id).orElseThrow(()-> new RuntimeException("Post not found"));
+    public PostResponseDTO updatePost(Long id, Post post) {
+        Post existingPost =postRepo.findById(id).orElseThrow(()-> new ResourceNotFoundException("Post not found"));
+        if(!existingPost.getAuthor().getId().equals(getCurrentUser().getId())){
+            throw new ForbiddenException("You can only edit your own posts");
+        }
         existingPost.setTitle(post.getTitle());
         existingPost.setContent(post.getContent());
         existingPost.setCoverImage(post.getCoverImage());
 
-        Category category = categoryRepo.findById(post.getCategory().getId())
-                .orElseThrow(() -> new RuntimeException("Category not found"));
-        existingPost.setCategory(category);
+
+            Category category = categoryRepo.findById(post.getCategory().getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
+            existingPost.setCategory(category);
+
+            List<Tag> tags = post.getTags().stream()
+                    .map(tag->tagRepo.findById(tag.getId())
+                            .orElseThrow(()-> new ResourceNotFoundException("Tag not found"))).collect(Collectors.toList());
+
+            existingPost.setTags(tags);
 
 
-        existingPost.setTags(post.getTags());
+            Post saved= postRepo.save(existingPost);
+            return PostResponseDTO.fromPost(saved);
 
-        return postRepo.save(existingPost);
+
+
+
     }
+
+
+
+
 
     @Override
     public void deletePost(Long id) {
 
-        Post existingPost =postRepo.findById(id).orElseThrow(()-> new RuntimeException("Post not found"));
 
+
+        Post existingPost =postRepo.findById(id).orElseThrow(()-> new ResourceNotFoundException("Post not found"));
+
+        User currentUser = getCurrentUser();
+        boolean isOwner = existingPost.getAuthor().getId().equals(currentUser.getId());
+        boolean isAdmin = currentUser.getRole()== Role.ADMIN;
+
+        if(!isOwner && !isAdmin){
+            throw new ForbiddenException("You can only delete your own posts");
+        }
         postRepo.delete(existingPost);
 
+
+
+
+
     }
 
     @Override
-    public List<Post> getPostsByUser(Long userId) {
+    public List<PostResponseDTO> getPostsByUser(Long userId) {
 
-       User existingUser=  userRepo.findById(userId).orElseThrow(()-> new RuntimeException("User not found"));
+       User existingUser=  userRepo.findById(userId).orElseThrow(()-> new ResourceNotFoundException("User not found"));
 
-        return postRepo.findByAuthor(existingUser);
+        return postRepo.findByAuthor(existingUser).stream().map(PostResponseDTO::fromPost).
+        collect(Collectors.toList());
     }
 
     @Override
-    public List<Post> getPostsByCategory(Long categoryId) {
-        Category existingCategory = categoryRepo.findById(categoryId).orElseThrow(()-> new RuntimeException("Category not found"));
+    public List<PostResponseDTO> getPostsByCategory(Long categoryId) {
+        Category existingCategory = categoryRepo.findById(categoryId).orElseThrow(()-> new ResourceNotFoundException("Category not found"));
 
 
-        return postRepo.findByCategory(existingCategory);
+        return postRepo.findByCategory(existingCategory).stream().
+                map(PostResponseDTO::fromPost).collect(Collectors.toList());
 
+    }
+
+
+    private User getCurrentUser(){
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepo.findByEmail(email).orElseThrow(()-> new ResourceNotFoundException("User not found"));
     }
 }

@@ -1,6 +1,7 @@
 package com.inkwell.service;
 
 import com.inkwell.entity.Category;
+import com.inkwell.exception.ResourceNotFoundException;
 import com.inkwell.repo.CategoryRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,12 +27,12 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public Category getCategoryById(Long id) {
-        return categoryRepo.findById(id).orElseThrow(()->new RuntimeException("category not found"));
+        return categoryRepo.findById(id).orElseThrow(()->new ResourceNotFoundException("category not found"));
     }
 
     @Override
     public Category updateCategory(Long id, Category category) {
-        Category existingCategory = categoryRepo.findById(id).orElseThrow(()-> new RuntimeException("Category not found"));
+        Category existingCategory = categoryRepo.findById(id).orElseThrow(()-> new ResourceNotFoundException("Category not found"));
 
         existingCategory.setName(category.getName());
         existingCategory.setDescription(category.getDescription());
@@ -41,7 +42,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public void deleteCategory(Long id) {
 
-        Category existingCategory = categoryRepo.findById(id).orElseThrow(()-> new RuntimeException("Category not found"));
+        Category existingCategory = categoryRepo.findById(id).orElseThrow(()-> new ResourceNotFoundException("Category not found"));
 
         categoryRepo.delete(existingCategory);
 

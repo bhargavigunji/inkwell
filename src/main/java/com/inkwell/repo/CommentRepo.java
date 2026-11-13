@@ -1,6 +1,7 @@
 package com.inkwell.repo;
 
 
+import com.inkwell.dto.CommentResponseDTO;
 import com.inkwell.entity.Comment;
 import com.inkwell.entity.Post;
 import org.springframework.data.jpa.repository.JpaRepository;

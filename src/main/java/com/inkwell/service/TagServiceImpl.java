@@ -1,6 +1,7 @@
 package com.inkwell.service;
 
 import com.inkwell.entity.Tag;
+import com.inkwell.exception.ResourceNotFoundException;
 import com.inkwell.repo.TagRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,12 +26,12 @@ public class TagServiceImpl implements TagService{
 
     @Override
     public Tag getTagById(Long id) {
-        return tagRepo.findById(id).orElseThrow(()-> new RuntimeException("Tag not found"));
+        return tagRepo.findById(id).orElseThrow(()-> new ResourceNotFoundException("Tag not found"));
     }
 
     @Override
     public Tag updateTag(Long id, Tag tag) {
-        Tag existingTag = tagRepo.findById(id).orElseThrow(()-> new RuntimeException("Tag not found"));
+        Tag existingTag = tagRepo.findById(id).orElseThrow(()-> new ResourceNotFoundException("Tag not found"));
 
         existingTag.setName(tag.getName());
         return tagRepo.save(existingTag);
@@ -39,7 +40,7 @@ public class TagServiceImpl implements TagService{
     @Override
     public void deleteTag(Long id) {
 
-        Tag existingTag = tagRepo.findById(id).orElseThrow(()-> new RuntimeException("Tag not found"));
+        Tag existingTag = tagRepo.findById(id).orElseThrow(()-> new ResourceNotFoundException("Tag not found"));
 
         tagRepo.delete(existingTag);
 

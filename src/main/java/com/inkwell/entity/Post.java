@@ -52,7 +52,7 @@ public class Post {
     private List<Tag> tags;
 
     @JsonManagedReference
-    @OneToMany(mappedBy = "post")
+    @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE)
     private List<Comment> comments;
 
 
