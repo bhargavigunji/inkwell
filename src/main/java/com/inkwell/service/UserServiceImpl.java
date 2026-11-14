@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.inkwell.util.CurrentUserProvider;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,6 +23,9 @@ public class UserServiceImpl implements UserService{
 
     @Autowired
     PasswordEncoder passwordEncoder;
+
+    @Autowired
+    CurrentUserProvider currentUserProvider;
 
     @Override
     public User registerUser(User user) {
@@ -48,9 +52,8 @@ public class UserServiceImpl implements UserService{
     @Override
     public UserResponseDTO getUserById(Long id) {
 
-        String email= SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = currentUserProvider.getCurrentUser();
 
-        User currentUser = userRepo.findByEmail(email).orElseThrow(()-> new ResourceNotFoundException("User not found"));
 
         if(currentUser.getRole() !=Role.ADMIN && !currentUser.getId().equals(id)){
             throw new ForbiddenException("Access Denied");
@@ -63,27 +66,17 @@ public class UserServiceImpl implements UserService{
 
     @Override
     public UserResponseDTO updateUser(Long id, User user) {
-
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        User currentUser = userRepo.findByEmail(email).orElseThrow(()-> new ResourceNotFoundException("User not found"));
+        User currentUser = currentUserProvider.getCurrentUser();
 
         if(!currentUser.getId().equals(id)){
             throw new ForbiddenException("You can only update your own profile");
         }
 
+        currentUser.setUsername(user.getUsername());
 
+        currentUser.setPassword(passwordEncoder.encode(user.getPassword()));
 
-
-
-        User existingUser =userRepo.findById(id).orElseThrow(()-> new ResourceNotFoundException("User not found"));
-
-
-        existingUser.setUsername(user.getUsername());
-        existingUser.setEmail(user.getEmail());
-        existingUser.setPassword(passwordEncoder.encode(user.getPassword()));
-
-        User savedUser =  userRepo.save(existingUser);
+        User savedUser =  userRepo.save(currentUser);
 
         return UserResponseDTO.fromUser(savedUser);
     }

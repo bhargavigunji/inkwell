@@ -6,6 +6,10 @@ import com.inkwell.service.AiService;
 import com.inkwell.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,8 +30,9 @@ public class PostController {
     }
 
     @GetMapping()
-    public List<PostResponseDTO> getAllPosts(){
-        return postService.getAllPosts();
+    public Page<PostResponseDTO> getAllPosts(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "5") int size ){
+        Pageable pageable= PageRequest.of(page,size, Sort.by("createdAt").descending());
+        return postService.getAllPosts(pageable);
     }
 
     @GetMapping("/{id}")
@@ -46,13 +51,15 @@ public class PostController {
     }
 
     @GetMapping("/user/{userId}")
-    public List<PostResponseDTO> getPostByUser(@PathVariable Long userId){
-        return postService.getPostsByUser(userId);
+    public Page<PostResponseDTO> getPostByUser(@PathVariable Long userId,@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "5") int size){
+        Pageable pageable =PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return postService.getPostsByUser(userId, pageable);
     }
 
     @GetMapping("/category/{categoryId}")
-    public List<PostResponseDTO> getPostByCategory(@PathVariable Long categoryId){
-        return postService.getPostsByCategory(categoryId);
+    public Page<PostResponseDTO> getPostByCategory(@PathVariable Long categoryId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "5") int size){
+        Pageable pageable= PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return postService.getPostsByCategory(categoryId, pageable);
     }
 
 

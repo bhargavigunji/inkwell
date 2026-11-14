@@ -9,11 +9,14 @@ import com.inkwell.repo.PostRepo;
 import com.inkwell.repo.TagRepo;
 import com.inkwell.repo.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import com.inkwell.util.CurrentUserProvider;
 
 import java.util.List;
 import java.util.stream.Collectors;
+
 
 @Service
 public class PostServiceImpl implements PostService {
@@ -30,10 +33,14 @@ public class PostServiceImpl implements PostService {
     @Autowired
     TagRepo tagRepo;
 
+    @Autowired
+    CurrentUserProvider currentUserProvider;
+
+
     @Override
     public PostResponseDTO createPost(Post post) {
 
-        User author = getCurrentUser();
+        User author = currentUserProvider.getCurrentUser();
 
         if(post.getAuthor()!=null && !author.getId().equals(post.getAuthor().getId())){
             throw new ForbiddenException("You cannot create a post on behalf of another user");
@@ -62,10 +69,8 @@ public class PostServiceImpl implements PostService {
 
 
     @Override
-    public List<PostResponseDTO> getAllPosts() {
-        return postRepo.findAll().stream()
-                .map(PostResponseDTO::fromPost)
-                .collect(Collectors.toList());
+    public Page<PostResponseDTO> getAllPosts(Pageable pageable) {
+        return postRepo.findAll(pageable).map(PostResponseDTO::fromPost);
     }
 
     @Override
@@ -77,7 +82,7 @@ public class PostServiceImpl implements PostService {
     @Override
     public PostResponseDTO updatePost(Long id, Post post) {
         Post existingPost =postRepo.findById(id).orElseThrow(()-> new ResourceNotFoundException("Post not found"));
-        if(!existingPost.getAuthor().getId().equals(getCurrentUser().getId())){
+        if(!existingPost.getAuthor().getId().equals(currentUserProvider.getCurrentUser().getId())){
             throw new ForbiddenException("You can only edit your own posts");
         }
         existingPost.setTitle(post.getTitle());
@@ -115,7 +120,7 @@ public class PostServiceImpl implements PostService {
 
         Post existingPost =postRepo.findById(id).orElseThrow(()-> new ResourceNotFoundException("Post not found"));
 
-        User currentUser = getCurrentUser();
+        User currentUser = currentUserProvider.getCurrentUser();
         boolean isOwner = existingPost.getAuthor().getId().equals(currentUser.getId());
         boolean isAdmin = currentUser.getRole()== Role.ADMIN;
 
@@ -131,27 +136,24 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public List<PostResponseDTO> getPostsByUser(Long userId) {
+    public Page<PostResponseDTO> getPostsByUser(Long userId, Pageable pageable) {
 
        User existingUser=  userRepo.findById(userId).orElseThrow(()-> new ResourceNotFoundException("User not found"));
 
-        return postRepo.findByAuthor(existingUser).stream().map(PostResponseDTO::fromPost).
-        collect(Collectors.toList());
+        return postRepo.findByAuthor(existingUser, pageable).map(PostResponseDTO::fromPost);
+
     }
 
     @Override
-    public List<PostResponseDTO> getPostsByCategory(Long categoryId) {
+    public Page<PostResponseDTO> getPostsByCategory(Long categoryId, Pageable pageable) {
         Category existingCategory = categoryRepo.findById(categoryId).orElseThrow(()-> new ResourceNotFoundException("Category not found"));
 
 
-        return postRepo.findByCategory(existingCategory).stream().
-                map(PostResponseDTO::fromPost).collect(Collectors.toList());
+        return postRepo.findByCategory(existingCategory, pageable).
+                map(PostResponseDTO::fromPost);
 
     }
 
 
-    private User getCurrentUser(){
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepo.findByEmail(email).orElseThrow(()-> new ResourceNotFoundException("User not found"));
-    }
+
 }

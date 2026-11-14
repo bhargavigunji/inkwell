@@ -29,7 +29,7 @@ public class UserController {
 
 
 
-    @PreAuthorize("hasRole('ADMIN')")
+
     @PutMapping("/{id}")
     public UserResponseDTO updateUser(@PathVariable Long id, @RequestBody User user){
         return userService.updateUser(id, user);

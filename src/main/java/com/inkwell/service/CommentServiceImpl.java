@@ -11,8 +11,10 @@ import com.inkwell.repo.CommentRepo;
 import com.inkwell.repo.PostRepo;
 import com.inkwell.repo.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import com.inkwell.util.CurrentUserProvider;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,10 +28,10 @@ public class CommentServiceImpl implements CommentService{
     @Autowired
     PostRepo postRepo;
 
+
+
     @Autowired
-    UserRepo userRepo;
-
-
+    CurrentUserProvider currentUserProvider;
 
 
     @Override
@@ -41,7 +43,7 @@ public class CommentServiceImpl implements CommentService{
 
 
 
-        User author = getCurrentUser();
+        User author = currentUserProvider.getCurrentUser();
 
         if(comment.getAuthor()!=null && !comment.getAuthor().getId().equals(author.getId())){
             throw new ForbiddenException("You cannot comment on behalf of other person");
@@ -60,14 +62,14 @@ public class CommentServiceImpl implements CommentService{
     }
 
     @Override
-    public List<CommentResponseDTO> getAllComments() {
-        return commentRepo.findAll().stream().map(CommentResponseDTO::fromComment).collect(Collectors.toList());
+    public Page<CommentResponseDTO> getAllComments(Pageable pageable) {
+        return commentRepo.findAll(pageable).map(CommentResponseDTO::fromComment);
     }
 
     @Override
-    public List<CommentResponseDTO> getCommentByPost(Long postId) {
+    public Page<CommentResponseDTO> getCommentByPost(Long postId, Pageable pageable) {
         Post existingPost= postRepo.findById(postId).orElseThrow(()-> new ResourceNotFoundException("Post not found"));
-        return commentRepo.findByPost(existingPost).stream().map(CommentResponseDTO::fromComment).collect(Collectors.toList());
+        return commentRepo.findByPost(existingPost, pageable).map(CommentResponseDTO::fromComment);
     }
 
     @Override
@@ -77,7 +79,7 @@ public class CommentServiceImpl implements CommentService{
 
         Comment existingComment = commentRepo.findById(id).orElseThrow(()-> new ResourceNotFoundException("Comment not found"));
 
-        User currentUser = getCurrentUser();
+        User currentUser = currentUserProvider.getCurrentUser();
 
         boolean isCommentAuthor= currentUser.getId().equals(existingComment.getAuthor().getId());
         boolean isPostAuthor = existingComment.getPost().getAuthor().getId().equals(currentUser.getId());
@@ -92,9 +94,5 @@ public class CommentServiceImpl implements CommentService{
 
     }
 
-    private User getCurrentUser(){
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepo.findByEmail(email).orElseThrow(()-> new ResourceNotFoundException("User not found"));
 
-    }
 }

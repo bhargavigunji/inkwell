@@ -1,11 +1,13 @@
-package util;
+package com.inkwell.util;
 
 import com.inkwell.entity.User;
 import com.inkwell.exception.ResourceNotFoundException;
 import com.inkwell.repo.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 
+@Component
 public class CurrentUserProvider {
 
 

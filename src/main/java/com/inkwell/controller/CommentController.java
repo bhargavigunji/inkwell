@@ -4,6 +4,10 @@ import com.inkwell.dto.CommentResponseDTO;
 import com.inkwell.entity.Comment;
 import com.inkwell.service.CommentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,13 +25,15 @@ public class CommentController {
     }
 
     @GetMapping()
-    public List<CommentResponseDTO> getAllComments(){
-        return commentService.getAllComments();
+    public Page<CommentResponseDTO> getAllComments(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "5") int size){
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return commentService.getAllComments(pageable);
     }
 
     @GetMapping("/posts/{postId}")
-    public List<CommentResponseDTO> getCommentByPost(@PathVariable Long postId){
-        return commentService.getCommentByPost(postId);
+    public Page<CommentResponseDTO> getCommentByPost(@PathVariable Long postId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "5") int size){
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return commentService.getCommentByPost(postId, pageable);
     }
 
     @DeleteMapping("/{id}")
